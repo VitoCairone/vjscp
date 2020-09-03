@@ -1,4 +1,4 @@
-console.log('start')
+console.log('start index.js')
 
 var util = require('util');
 
@@ -139,12 +139,6 @@ function rankBestHand(cards) {
 
   return ret.score
 }
-
-console.log("starting deck")
-printDeck()
-shuffleInPlace(deck)
-console.log("shuffled deck")
-printDeck()
 
 // need a better way of doing this
 exports.STRAIGHT_FLUSH = STRAIGHT_FLUSH;
