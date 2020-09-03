@@ -42,8 +42,8 @@ function printDeck() {
 }
 
 function cardStrToN(cardStr) {
-  var rankN = rankChArr.findIndex(cardStr[0])
-  var suitN = suitChArr.findIndex(cardStr[1])
+  var rankN = rankChArr.indexOf(cardStr[0])
+  var suitN = suitChArr.indexOf(cardStr[1])
   return (rankN - 2) * 4 + suitN
 }
 
@@ -66,8 +66,8 @@ function rankBestHand(cards) {
   var suitHist = [0, 0, 0, 0]
   var rankHist = new Array(15).fill(0)
   cards.forEach(x => {
-    rankHist[getRankN(x)++];
-    suitHist[getSuitN(x)++];
+    rankHist[getRankN(x)]++;
+    suitHist[getSuitN(x)]++;
   })
   var suitHistMax = Math.max(...suitHist);
   var hasFlush = (suitHistMax >= 5);
@@ -86,7 +86,7 @@ function rankBestHand(cards) {
     } else if (hasTrips) {
       ret.score = TRIPS
     } else if (hasPair) {
-      var hasTwoPair = (len(rankHist.filter(x => x == 2)) >= 2)
+      var hasTwoPair = (rankHist.filter(x => x == 2).length >= 2);
       ret.score = hasTwoPair ? TWO_PAIR : PAIR;
     } else {
       ret.score = HIGH_CARD;
@@ -137,6 +137,7 @@ function rankBestHand(cards) {
     }
   }
 
+  return ret.score
 }
 
 console.log("starting deck")
@@ -144,6 +145,17 @@ printDeck()
 shuffleInPlace(deck)
 console.log("shuffled deck")
 printDeck()
+
+// need a better way of doing this
+exports.STRAIGHT_FLUSH = STRAIGHT_FLUSH;
+exports.FOUR_OF_A_KIND = FOUR_OF_A_KIND;
+exports.FULL_HOUSE = FULL_HOUSE;
+exports.FLUSH = FLUSH;
+exports.STRAIGHT = STRAIGHT;
+exports.TRIPS = TRIPS;
+exports.TWO_PAIR = TWO_PAIR;
+exports.PAIR = PAIR;
+exports.HIGH_CARD = HIGH_CARD;
 
 exports.deck = deck
 exports.shuffleInPlace = shuffleInPlace
