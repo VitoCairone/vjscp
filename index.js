@@ -36,15 +36,15 @@ function suitCh(suitN) {
   return suitChArr[suitN];
 }
 
-// var everySecondFuncs = [];
-
-// setInterval(() => {
-//   everySecondFuncs.forEach(func => { func(); });
-// }, 1000)
-
 function printDeck() {
   deckStrs = deck.map(x => rankCh(getRankN(x)) + suitCh(getSuitN(x)))
   console.log(util.inspect(deckStrs, {breakLength: Infinity}))
+}
+
+function cardStrToN(cardStr) {
+  var rankN = rankChArr.findIndex(cardStr[0])
+  var suitN = suitChArr.findIndex(cardStr[1])
+  return (rankN - 2) * 4 + suitN
 }
 
 const STRAIGHT_FLUSH = 9000000
@@ -144,3 +144,9 @@ printDeck()
 shuffleInPlace(deck)
 console.log("shuffled deck")
 printDeck()
+
+exports.deck = deck
+exports.shuffleInPlace = shuffleInPlace
+exports.printDeck = printDeck
+exports.rankBestHand = rankBestHand
+exports.cardStrToN = cardStrToN
