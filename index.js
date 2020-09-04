@@ -1,7 +1,5 @@
 console.log('start index.js')
 
-var util = require('util');
-
 var deck = [];
 
 for (var i = 0; i < 52; i++) {
@@ -36,9 +34,13 @@ function suitCh(suitN) {
   return suitChArr[suitN];
 }
 
+function makeCardsStr(cards) {
+  cardStrs = cards.map(x => rankCh(getRankN(x)) + suitCh(getSuitN(x)))
+  return cardStrs.join(", ") 
+}
+
 function printDeck() {
-  deckStrs = deck.map(x => rankCh(getRankN(x)) + suitCh(getSuitN(x)))
-  console.log(util.inspect(deckStrs, {breakLength: Infinity}))
+  console.log(makeCardsStr(deck))
 }
 
 function cardStrToN(cardStr) {
@@ -153,6 +155,7 @@ exports.HIGH_CARD = HIGH_CARD;
 
 exports.deck = deck
 exports.shuffleInPlace = shuffleInPlace
+exports.makeCardsStr = makeCardsStr
 exports.printDeck = printDeck
 exports.rankBestHand = rankBestHand
 exports.cardStrToN = cardStrToN
