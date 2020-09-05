@@ -153,9 +153,12 @@ exports.TWO_PAIR = TWO_PAIR;
 exports.PAIR = PAIR;
 exports.HIGH_CARD = HIGH_CARD;
 
+
 exports.deck = deck
 exports.shuffleInPlace = shuffleInPlace
 exports.makeCardsStr = makeCardsStr
 exports.printDeck = printDeck
 exports.rankBestHand = rankBestHand
 exports.cardStrToN = cardStrToN
+exports.getRankN = getRankN
+exports.getSuitN = getSuitN

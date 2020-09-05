@@ -83,6 +83,25 @@ function riverPhaseStart() {
   shouldAdvancePhase = true;
 }
 
+function holdCardsPointValue(cards) {
+  // mostly arbitrary for now, until winrate tables are built
+  var r1 = dealer.getRankN(cards[0])
+  var s1 = dealer.getSuitN(cards[0])
+  var r2 = dealer.getRankN(cards[1])
+  var s2 = dealer.getSuitN(cards[1])
+  var rv = r1 + r2;
+  if (s1 == s2) rv += 5;
+  switch (Math.abs(r1 - r2)) {
+    case 0: rv += 10;
+    case 1: rv += 4;
+    case 2: rv += 2
+  }
+  return rv;
+}
+
+function holdVsSharedCardsPointValue(cards, sharedCards) {
+}
+
 function betRound(isAnteRound = false) {
   var firstN = (bigBlindSeatN + 1) % 10
   var firstChoice = true;
@@ -118,6 +137,10 @@ setInterval(() => {
   if (shouldAdvancePhase) {
     shouldAdvancePhase = false;
     phaseIdx++;
+    if (phaseIdx == phases.length) {
+      // setupPhase runs only once, restart at antePhase
+      phaseIdx = 1;
+    }
     phases[phaseIdx]();
   }
-}, 2000)
+}, 200)
