@@ -10,6 +10,9 @@ var bigBlindSeatN = 0;
 var sharedCards = [];
 var ante = 50;
 var betToMatch = 0;
+var shouldAdvancePhase = false;
+var phaseIdx = 0;
+var shouldQuit = false;
 
 function getSmallBlindSeatN() {
   if (bigBlindSeatN == 0) return 9;
@@ -22,7 +25,8 @@ function setupPhase() {
     p.chips = 1000;
     p.currentBet = 0;
     p.isAllIn = false;
-  })
+  });
+  shouldAdvancePhase = true;
 }
 
 function betTo(seatN, amount) {
@@ -53,6 +57,7 @@ function antePhase() {
   players.forEach((p, idx) => {
     p.holdCards = [deck[idx * 2], deck[idx * 2 + 1]]
   })
+  shouldAdvancePhase = true;
 }
 
 function flopPhaseStart() {
@@ -61,18 +66,21 @@ function flopPhaseStart() {
   sharedCards.push(deck[49]);
   sharedCardsStr = dealer.makeCardsStr(sharedCards);
   console.log("Shared cards at Flop: ", sharedCardsStr);
+  shouldAdvancePhase = true;
 }
 
 function turnPhaseStart() {
   sharedCards.push(deck[50]);
   sharedCardsStr = dealer.makeCardsStr(sharedCards);
   console.log("Shared cards at Turn: ", sharedCardsStr);
+  shouldAdvancePhase = true;
 }
 
 function riverPhaseStart() {
   sharedCards.push(deck[51]);
   sharedCardsStr = dealer.makeCardsStr(sharedCards);
   console.log("Shared cards at River: ", sharedCardsStr);
+  shouldAdvancePhase = true;
 }
 
 function betRound(isAnteRound = false) {
@@ -85,15 +93,31 @@ function betRound(isAnteRound = false) {
     
     console.log("NYI: first round choice for player " + i)
   }
+  shouldAdvancePhase = true;
 }
 
-// no actions yet
-setupPhase()
-setTimeout(antePhase, 2000)
-setTimeout(betRound.bind(true), 2200)
-setTimeout(flopPhaseStart, 4000)
-setTimeout(betRound, 4200)
-setTimeout(turnPhaseStart, 6000)
-setTimeout(betRound, 6200)
-setTimeout(riverPhaseStart, 8000)
-setTimeout(betRound, 8200)
+function showdown() {
+  // NYI
+}
+
+var phases = [
+  setupPhase,
+  antePhase,
+  betRound.bind(true),
+  flopPhaseStart,
+  betRound,
+  turnPhaseStart,
+  betRound,
+  riverPhaseStart,
+  betRound,
+  showdown
+]
+
+shouldAdvancePhase = true;
+setInterval(() => {
+  if (shouldAdvancePhase) {
+    shouldAdvancePhase = false;
+    phaseIdx++;
+    phases[phaseIdx]();
+  }
+}, 2000)
