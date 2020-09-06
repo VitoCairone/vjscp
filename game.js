@@ -1,4 +1,4 @@
-var dealer = require('./index.js');
+var dealer = require('./dealer.js');
 
 // setup and run a game with 1 human player and 9 auto players
 

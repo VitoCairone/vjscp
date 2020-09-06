@@ -1,4 +1,4 @@
-var dealer = require('./index.js');
+var dealer = require('./dealer.js');
 
 console.log('start test.js')
 
