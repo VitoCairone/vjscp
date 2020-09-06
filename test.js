@@ -10,7 +10,7 @@ tests = [
   () => {
     var cardStrs = ['4h', '3s', '2d', '9c', '5h', '6h', '9s'];
     var cards = cardStrs.map(x => dealer.cardStrToN(x));
-    var handC = handClass(dealer.rankBestHand(cards));
+    var handC = handClass(dealer.scoreBestHand(cards));
     if (handC != dealer.STRAIGHT) {
       return console.log('Test failed: Did not detect STRAIGHT');
     }
@@ -19,7 +19,7 @@ tests = [
   () => {
     var cardStrs = ['4h', '3s', '2d', '9c', '9h', '6h', '9s'];
     var cards = cardStrs.map(x => dealer.cardStrToN(x));
-    var handC = handClass(dealer.rankBestHand(cards));
+    var handC = handClass(dealer.scoreBestHand(cards));
 
     if (handC != dealer.TRIPS) {
       return console.log('Test failed: Did not detect TRIPS');
@@ -29,7 +29,7 @@ tests = [
   () => {
     var cardStrs = ['4h', '4s', '2d', '2c', '9h', '6h', 'Ks'];
     var cards = cardStrs.map(x => dealer.cardStrToN(x));
-    var handC = handClass(dealer.rankBestHand(cards));
+    var handC = handClass(dealer.scoreBestHand(cards));
     if (handC != dealer.TWO_PAIR) {
       return console.log('Test failed: Did not detect TWO_PAIR');
     }
@@ -38,7 +38,7 @@ tests = [
   () => {
     var cardStrs = ['4h', '4s', '2h', '2c', '9h', '6h', 'Kh'];
     var cards = cardStrs.map(x => dealer.cardStrToN(x));
-    var handC = handClass(dealer.rankBestHand(cards));
+    var handC = handClass(dealer.scoreBestHand(cards));
     if (handC != dealer.FLUSH) {
       return console.log('Test failed: Did not detect FLUSH');
     }
@@ -47,7 +47,7 @@ tests = [
   () => {
     var cardStrs = ['4h', '6s', '2d', '9c', '9h', '6h', '9s'];
     var cards = cardStrs.map(x => dealer.cardStrToN(x));
-    var handC = handClass(dealer.rankBestHand(cards));
+    var handC = handClass(dealer.scoreBestHand(cards));
 
     if (handC != dealer.FULL_HOUSE) {
       return console.log('Test failed: Did not detect FULL_HOUSE');

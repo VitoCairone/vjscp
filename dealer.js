@@ -63,7 +63,7 @@ const TWO_PAIR       = 3000000
 const PAIR           = 2000000
 const HIGH_CARD      = 1000000
 
-function rankBestHand(cardsArr) {
+function scoreBestHand(cardsArr) {
   // work on a copy so we can sort it without modifying the input
   cards = cardsArr.slice().sort((a, b) => b - a)
 
@@ -80,24 +80,30 @@ function rankBestHand(cardsArr) {
   })
   var reverseRankHist = new Array(5).fill([])
   rankHist.forEach((val, idx) => {
-    reverseRankHist[val].push(idx);
+    if (val != 0) reverseRankHist[val].push(idx);
   });
   reverseRankHist = reverseRankHist.map(xs => xs.reverse());
+
+  // cards are in descending rank order, because we sorted them at the top.
+  // Example cards: [Kd 9d 9h 9s 7c 4c 2c]
+  // rankHist: [0, 0, 1, 0, 1, 0, 0, 1, 0, 3, 0, 0, 0, 1, 0]
+  // suitHist: [1, 1, 2, 3]
+  // reverseRankHist: [[], [13, 7, 4, 2], [], [9], []]
+
   var suitHistMax = Math.max(...suitHist);
-  var hasFlush = (suitHistMax >= 5);
   var rankHistMax = Math.max(...rankHist);
 
   if (rankHistMax == 4) {
-    ret.score = FOUR_OF_A_KIND
+    ret.score = FOUR_OF_A_KIND;
   } else {
-    var hasTrips = rankHist.includes(3)
-    var hasPair = rankHist.includes(2)
-    if (hasTrips && hasPair) {
+    var hasTrips = reverseRankHist[3].length > 0;
+    var hasPair = reverseRankHist[2].length > 0;
+    if (hasTrips && (hasPair || reverseRankHist[3].length > 1)) {
       ret.score = FULL_HOUSE
     } else if (hasTrips) {
       ret.score = TRIPS
     } else if (hasPair) {
-      var hasTwoPair = (rankHist.filter(x => x == 2).length >= 2);
+      var hasTwoPair = reverseRankHist[2].length > 1;
       ret.score = hasTwoPair ? TWO_PAIR : PAIR;
     } else {
       ret.score = HIGH_CARD;
@@ -118,20 +124,20 @@ function rankBestHand(cardsArr) {
       break;
     }
   }
-
   if (hasStraight && ret.score < STRAIGHT) {
     ret.score = STRAIGHT;
   }
+
+  var hasFlush = (suitHistMax >= 5);
   if (hasFlush && ret.score < FLUSH) {
     ret.score = FLUSH;
   }
 
   var sfHighRank = 0;
   if (hasStraight && hasFlush) {
-    var flushSuitN = suitHist.findIndex(x => x >= 5)
-    var flushCards = cards.filter(x => getSuitN(x) == flushSuitN)
+    var flushSuitN = suitHist.findIndex(x => x >= 5);
+    var flushCards = cards.filter(x => getSuitN(x) == flushSuitN);
     var hasStraightFlush = false;
-    flushCards.sort((a, b) => b - a);
     var prevRank = -1;
     var consec = 0;
     flushCards.forEach(x => {
@@ -219,7 +225,8 @@ function rankBestHand(cardsArr) {
   return ret.score
 }
 
-// need a better way of doing this
+// TODO: move everything into one object or function, so we don't
+// need to export all the things individually
 exports.STRAIGHT_FLUSH = STRAIGHT_FLUSH;
 exports.FOUR_OF_A_KIND = FOUR_OF_A_KIND;
 exports.FULL_HOUSE = FULL_HOUSE;
@@ -230,12 +237,11 @@ exports.TWO_PAIR = TWO_PAIR;
 exports.PAIR = PAIR;
 exports.HIGH_CARD = HIGH_CARD;
 
-
-exports.deck = deck
-exports.shuffleInPlace = shuffleInPlace
-exports.makeCardsStr = makeCardsStr
-exports.printDeck = printDeck
-exports.rankBestHand = rankBestHand
-exports.cardStrToN = cardStrToN
-exports.getRankN = getRankN
-exports.getSuitN = getSuitN
+exports.deck = deck;
+exports.shuffleInPlace = shuffleInPlace;
+exports.makeCardsStr = makeCardsStr;
+exports.printDeck = printDeck;
+exports.scoreBestHand = scoreBestHand;
+exports.cardStrToN = cardStrToN;
+exports.getRankN = getRankN;
+exports.getSuitN = getSuitN;
