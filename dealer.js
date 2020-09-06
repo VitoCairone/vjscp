@@ -78,11 +78,11 @@ function scoreBestHand(cardsArr) {
     rankHist[getRankN(x)]++;
     suitHist[getSuitN(x)]++;
   })
-  var reverseRankHist = new Array(5).fill([])
+  var reverseRankHist = [[], [], [], [], []];
   rankHist.forEach((val, idx) => {
     if (val != 0) reverseRankHist[val].push(idx);
   });
-  reverseRankHist = reverseRankHist.map(xs => xs.reverse());
+  // reverseRankHist = reverseRankHist.map(xs => xs.reverse());
 
   // cards are in descending rank order, because we sorted them at the top.
   // Example cards: [Kd 9d 9h 9s 7c 4c 2c]
