@@ -63,6 +63,35 @@ const TWO_PAIR       = 3000000
 const PAIR           = 2000000
 const HIGH_CARD      = 1000000
 
+function scoreFlushHand(flushCards) {
+  var count = flushCards.length;
+
+  var hasStraightFlush = false;
+  var sfRank = 0;
+  for (var i = 0; i + 4 < count; i++) {
+    if (getRankN(flushCards[i]) - 4 === getRankN(flushCards[i + 4])) {
+      hasStraightFlush = true;
+      sfRank = getRankN(flushCards[i]);
+      break;
+    }
+  }
+  if (!hasStraightFlush && getRankN(flushCards[0]) === 14
+  && getRankN(flushCards[count - 4] === 5)) {
+    hasStraightFlush = true;
+    sfRank = 5;
+  }
+
+  if (hasStraightFlush) {
+    return STRAIGHT_FLUSH + sfRank;
+  } else {
+    const base = 15;
+    flushCards.length = 5;
+    var ranksVal = 0;
+    flushCards.forEach(x => ranksVal = ranksVal * base + getRankN(x));
+    return FLUSH + ranksVal;
+  }
+}
+
 function scoreBestHand(cardsArr) {
   // work on a copy so we can sort it without modifying the input
   cards = cardsArr.slice().sort((a, b) => b - a)
@@ -78,21 +107,27 @@ function scoreBestHand(cardsArr) {
     rankHist[getRankN(x)]++;
     suitHist[getSuitN(x)]++;
   })
+
+  // a 7-card hand cannot contain both a Flush
+  // and a Full House or Four of a Kind, so if there is a Flush,
+  // we need only check for a Straight Flush.
+  if (Math.max(...suitHist) >= 5) {
+    var flushSuitN = suitHist.findIndex(x => x >= 5);
+    return scoreFlushHand(cards.filter(x => getSuitN(x) === flushSuitN));
+  }
+
   var reverseRankHist = [[], [], [], [], []];
   rankHist.forEach((val, idx) => {
     if (val != 0) reverseRankHist[val].push(idx);
   });
-  // reverseRankHist = reverseRankHist.map(xs => xs.reverse());
+  reverseRankHist = reverseRankHist.map(xs => xs.reverse());
 
   // cards are in descending rank order, because we sorted them at the top.
   // Example cards: [Kd 9d 9h 9s 7c 4c 2c]
   // rankHist: [0, 0, 1, 0, 1, 0, 0, 1, 0, 3, 0, 0, 0, 1, 0]
-  // suitHist: [1, 1, 2, 3]
   // reverseRankHist: [[], [13, 7, 4, 2], [], [9], []]
 
-  var suitHistMax = Math.max(...suitHist);
   var rankHistMax = Math.max(...rankHist);
-
   if (rankHistMax == 4) {
     ret.score = FOUR_OF_A_KIND;
   } else {
@@ -110,8 +145,7 @@ function scoreBestHand(cardsArr) {
     }
   }
 
-  var hasStraight = false;
-  var straightLowRank = 0;
+  var straightRank = 0;
   for (var i = 2, consec = 0; i < 15; i++) {
     if (rankHist[i] > 0) {
       consec++;
@@ -119,51 +153,14 @@ function scoreBestHand(cardsArr) {
       consec = 0
     }
     if (consec == 5) {
-      hasStraight = true;
-      straightLowRank = i;
-      break;
-    }
-  }
-  if (hasStraight && ret.score < STRAIGHT) {
-    ret.score = STRAIGHT;
-  }
-
-  var hasFlush = (suitHistMax >= 5);
-  if (hasFlush && ret.score < FLUSH) {
-    ret.score = FLUSH;
-  }
-
-  var sfHighRank = 0;
-  if (hasStraight && hasFlush) {
-    var flushSuitN = suitHist.findIndex(x => x >= 5);
-    var flushCards = cards.filter(x => getSuitN(x) == flushSuitN);
-    var hasStraightFlush = false;
-    var prevRank = -1;
-    var consec = 0;
-    flushCards.forEach(x => {
-      var rank = getRankN(x)
-      if (prevRank - rank == 1) {
-        consec++;
-        if (consec == 4) {
-          hasStraightFlush = true;
-        }
-      } else {
-        sfHighRank = rank;
-        consec = 0;
-      }
-      prevRank = rank;
-    });
-    if (hasStraightFlush) {
-      ret.score = STRAIGHT_FLUSH;
+      ret.score = STRAIGHT;
+      straightRank = i;
     }
   }
 
   // now that the type of hand is set, add on the ranks of cards in the hand
   const base = 15;
   switch (ret.score) {
-    case STRAIGHT_FLUSH:
-      ret.score += sfHighRank;
-      break;
     case FOUR_OF_A_KIND:
       var highVal = reverseRankHist[4][0];
       var kicker = cards.find(dealer.getRankN(card) != highVal);
@@ -182,16 +179,8 @@ function scoreBestHand(cardsArr) {
       kicker = Math.max(kicker, secondTripsVal);
       ret.score += base * highVal + kicker;
       break;
-    case FLUSH:
-      var flushSuitN = suitHist.findIndex(x => x >= 5);
-      var flushCards = cards.filter(x => getSuitN(x) == flushSuitN);
-      flushCards.length = 5;
-      var ranksVal = 0;
-      flushCards.forEach(x => ranksVal = ranksVal * base + getRankN(x));
-      ret.score += ranksVal;
-      break;
     case STRAIGHT:
-      ret.score += straightLowRank + 4;
+      ret.score += straightRank;
       break;
     case TRIPS:
       var highVal = reverseRankHist[3][0];
@@ -211,7 +200,7 @@ function scoreBestHand(cardsArr) {
       break;
     case PAIR:
       var highVal = reverseRankHist[2][0];
-      var otherRanks = reverseRankHist[1].slice(4);
+      var otherRanks = reverseRankHist[1].slice(3);
       var ranksVal = highVal;
       otherRanks.forEach(x => ranksVal = ranksVal * base + x);
       ret.score += ranksVal;
