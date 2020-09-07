@@ -146,6 +146,8 @@ function scoreBestHand(cardsArr) {
   }
 
   var straightRank = 0;
+  // this loop goes over 13 items for a 7-hard cand;
+  // it works, but there's probably a faster way to do this...
   for (var i = 2, consec = 0; i < 15; i++) {
     if (rankHist[i] > 0) {
       consec++;
@@ -214,6 +216,43 @@ function scoreBestHand(cardsArr) {
   return ret.score
 }
 
+function getScoreName(score, doShowRanks = false) {
+  let classVal = Math.floor(score / 1000000);
+  const classStrs = [
+    "",
+    "High Card",
+    "Pair",
+    "Two Pair",
+    "Trips",
+    "Straight",
+    "Flush",
+    "Full House",
+    "Four of a Kind",
+    "Straight Flush"
+  ]
+  let ret = classStrs[classVal];
+
+  if (!doShowRanks && classVal != 1) return ret;
+
+  const base = 15;
+  const base2 = base * base;
+  const base3 = base * base * base;
+  const base4 = base * base * base * base;
+  var ranksStr = "";
+  var thisRankN = 0;
+  var rem = score - classVal * 1000000;
+
+  [base4, base3, base2, base, 0].forEach(baseX => {
+    if (rem > baseX) {
+      thisRankN = baseX ? Math.floor(rem / baseX) : rem;
+      ranksStr += " " + rankCh(thisRankN);
+      rem -= thisRankN * baseX;
+    }
+  });
+
+  return ret + ranksStr;
+}
+
 // TODO: move everything into one object or function, so we don't
 // need to export all the things individually
 exports.STRAIGHT_FLUSH = STRAIGHT_FLUSH;
@@ -234,3 +273,4 @@ exports.scoreBestHand = scoreBestHand;
 exports.cardStrToN = cardStrToN;
 exports.getRankN = getRankN;
 exports.getSuitN = getSuitN;
+exports.getScoreName = getScoreName;

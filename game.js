@@ -13,6 +13,7 @@ var betToMatch = 0;
 var shouldAdvancePhase = false;
 var phaseIdx = 0;
 var shouldQuit = false;
+var pot = 0;
 
 function getSmallBlindSeatN() {
   if (bigBlindSeatN == 0) return 9;
@@ -115,8 +116,37 @@ function betRound(isAnteRound = false) {
   shouldAdvancePhase = true;
 }
 
+function conjunct(items) {
+  if (items.length < 2) {
+    return items;
+  } else if (items.length === 2) {
+    return items[0] + " and " + items[1];
+  }
+  var len = items.length;
+  return items.slice(len - 1).join(", ") + " and " + items[len - 1];
+}
+
+function getPlayerName(player) {
+  return "Player " + seatN;
+}
+
 function showdown() {
-  // NYI
+  contestants = players.filter(x => !x.isFolded);
+  maxScore = 0;
+  winners = [];
+  contestants.forEach(x => {
+    x.score = dealer.scoreBestHand(x.holdCards.concat(sharedCards));
+    if (x.score > maxScore) maxScore = x.score;
+  });
+  winners = contestens.filter(x => x.score === maxScore);
+  // TODO: handle side pots correctly
+  let award = pot / winners.length;
+  winners.forEach(x => {
+    let name = getPlayerName(x);
+    let scoreName = dealer.getScoreName(x.score);
+    console.log(name + " wins " + award + " chips with " + scoreName);
+    x.chips += award;
+  });
 }
 
 var phases = [
