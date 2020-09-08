@@ -45,19 +45,19 @@ function betTo(seatN, amount) {
 }
 
 function antePhase() {
-  betToMatch = ante
   sharedCards.length = 0;
   bigBlindSeatN = (bigBlindSeatN + 1) % 10;
   var bb = bigBlindSeatN;
   var sb = getSmallBlindSeatN();
   dealer.shuffleInPlace(deck);
+  players.forEach((p, idx) => {
+    p.currentBet = 0;
+    p.holdCards = [deck[idx * 2], deck[idx * 2 + 1]];
+  })
   betTo(bb, ante)
   console.log("Player " + bb + " antes.")
   betTo(sb, Math.round(ante / 2, 0))
   console.log("Player " + sb + " antes (small blind).")
-  players.forEach((p, idx) => {
-    p.holdCards = [deck[idx * 2], deck[idx * 2 + 1]]
-  })
   shouldAdvancePhase = true;
 }
 
@@ -84,34 +84,75 @@ function riverPhaseStart() {
   shouldAdvancePhase = true;
 }
 
-function holdCardsPointValue(cards) {
-  // mostly arbitrary for now, until winrate tables are built
-  var r1 = dealer.getRankN(cards[0])
-  var s1 = dealer.getSuitN(cards[0])
-  var r2 = dealer.getRankN(cards[1])
-  var s2 = dealer.getSuitN(cards[1])
-  var rv = r1 + r2;
-  if (s1 == s2) rv += 5;
-  switch (Math.abs(r1 - r2)) {
-    case 0: rv += 10;
-    case 1: rv += 4;
-    case 2: rv += 2
-  }
-  return rv;
+function actCheck(player) {
+  console.log(getPlayerName(player) + " checks.");
 }
 
-function holdVsSharedCardsPointValue(cards, sharedCards) {
+function actCall(player) {
+  betTo(player.seatN, betToMatch);
+  console.log(getPlayerName(player) + " calls.");
+}
+
+function actFold(player) {
+  player.isFolded = true;
+  console.log(getPlayerName(player) + " folds.");
+}
+
+function actRaise(player) {
+  var verb = betToMatch > 0 ? "raises" : "bets";
+  var name = getPlayerName(player);
+  if (Math.random() > 0.99) {
+    amount = player.chips;
+  } else {
+    amount = Math.floor(Math.random() * player.chips);
+  } 
+  betToMatch += amount;
+  betTo(player.seatN, betToMatch);
+  var sentence1 = name + " " + verb + " " + amount + " chips."
+  var sentence2 = "Bet is now " + betToMatch + " chips."
+  console.log(sentence1 + " " + sentence2);
+}
+
+function decisionRound() {
+  var firstN = (bigBlindSeatN + 1) % 10;
+  for (var i = firstN, count = 0; count < 10; i = (i + 1) % 10, count++) {
+    var player = players[i];
+    if (player.isAllIn || player.isFolded) continue;
+    if (betToMatch === 0 || player.currentBet === betToMatch) {
+      if (Math.random() < 0.8) {
+        actCheck(player);
+      } else {
+        actRaise(player);
+      }
+    } else {
+      if (Math.random() < 0.5) {
+        actCall(player);
+      } else if (Math.random() < 0.5) {
+        actFold(player);
+      } else {
+        actRaise(player);
+      }
+    }
+  }
+}
+
+function allPlayersCalled() {
+  return players.every(x => {
+    return x.isAllIn || x.isFolded || x.currentBet === betToMatch;
+  });
 }
 
 function betRound(isAnteRound = false) {
-  var firstN = (bigBlindSeatN + 1) % 10
-  var firstChoice = true;
-  for (var i = firstN; firstChoice || i != firstN; i = (i + 1) % 10) {
-    firstChoice = false;
-
-    // need decision-making logic here
-    
-    console.log("NYI: first round choice for player " + i)
+  if (isAnteRound) {
+    players.forEach(x => x.isFolded = false);
+    betToMatch = ante;
+  } else {
+    players.forEach(x => x.currentBet = 0);
+    betToMatch = 0;
+  }
+  decisionRound();
+  while (betToMatch !== 0 && !allPlayersCalled()) {
+    decisionRound();
   }
   shouldAdvancePhase = true;
 }
@@ -127,7 +168,7 @@ function conjunct(items) {
 }
 
 function getPlayerName(player) {
-  return "Player " + seatN;
+  return "Player " + player.seatN;
 }
 
 function showdown() {
