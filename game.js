@@ -5,14 +5,13 @@ var dealer = require('./dealer.js');
 console.log("Running game.js");
 
 var deck = dealer.deck;
-var players = new Array(10).fill({})
+var players = [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}];
 var bigBlindSeatN = 0;
 var sharedCards = [];
 var ante = 50;
 var betToMatch = 0;
 var shouldAdvancePhase = false;
-var phaseIdx = 0;
-var shouldQuit = false;
+var phaseIdx = -1;
 var pot = 0;
 
 function getSmallBlindSeatN() {
@@ -179,7 +178,7 @@ function showdown() {
     x.score = dealer.scoreBestHand(x.holdCards.concat(sharedCards));
     if (x.score > maxScore) maxScore = x.score;
   });
-  winners = contestens.filter(x => x.score === maxScore);
+  winners = contestants.filter(x => x.score === maxScore);
   // TODO: handle side pots correctly
   let award = pot / winners.length;
   winners.forEach(x => {
