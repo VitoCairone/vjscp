@@ -20,43 +20,47 @@ function getSmallBlindSeatN() {
 }
 
 function setupPhase() {
+  console.log("@@@@@@@@@@@@@@@@ setupPhase");
   players.forEach((p, idx) => {
     p.seatN = idx;
     p.chips = 1000;
-    p.currentBet = 0;
+    p.currentBetThisRound = 0;
     p.isAllIn = false;
   });
   shouldAdvancePhase = true;
 }
 
 function betTo(seatN, amount) {
+  console.log(players.map(x => x.currentBetThisRound));
+  console.log("@@ called betTo for ", seatN, amount);
   var p = players[seatN];
-  if ((p.chips - p.currentBet) > amount) {
-    var betToAdd = amount - p.currentBet;
+  if ((p.chips - p.currentBetThisRound) > amount) {
+    var betToAdd = amount - p.currentBetThisRound;
     p.chips -= betToAdd;
-    p.currentBet = amount;
+    p.currentBetThisRound = amount;
   } else {
     var betToAdd = p.chips;
     p.chips = 0;
-    p.currentBet += betToAdd;
+    p.currentBetThisRound += betToAdd;
     p.isAllIn = true;
   }
 }
 
 function antePhase() {
+  console.log("@@@@@@@@@@@@@@@ antePhase");
   sharedCards.length = 0;
   bigBlindSeatN = (bigBlindSeatN + 1) % 10;
   var bb = bigBlindSeatN;
   var sb = getSmallBlindSeatN();
   dealer.shuffleInPlace(deck);
   players.forEach((p, idx) => {
-    p.currentBet = 0;
+    p.currentBetThisRound = 0;
     p.holdCards = [deck[idx * 2], deck[idx * 2 + 1]];
-  })
-  betTo(bb, ante)
-  console.log("Player " + bb + " antes.")
-  betTo(sb, Math.round(ante / 2, 0))
-  console.log("Player " + sb + " antes (small blind).")
+  });
+  betTo(sb, Math.round(ante / 2, 0));
+  console.log("Player " + sb + " antes (small blind).");
+  betTo(bb, ante);
+  console.log("Player " + bb + " antes.");
   shouldAdvancePhase = true;
 }
 
@@ -88,8 +92,8 @@ function actCheck(player) {
 }
 
 function actCall(player) {
-  betTo(player.seatN, betToMatch);
   console.log(getPlayerName(player) + " calls.");
+  betTo(player.seatN, betToMatch);
 }
 
 function actFold(player) {
@@ -100,16 +104,18 @@ function actFold(player) {
 function actRaise(player) {
   var verb = betToMatch > 0 ? "raises" : "bets";
   var name = getPlayerName(player);
+  var requiredAdd = betToMatch - player.currentBetThisRound;
+  var surplus = player.chips - requiredAdd;
   if (Math.random() > 0.99) {
-    amount = player.chips;
+    raiseAmount = surplus;
   } else {
-    amount = Math.floor(Math.random() * player.chips);
-  } 
-  betToMatch += amount;
-  betTo(player.seatN, betToMatch);
-  var sentence1 = name + " " + verb + " " + amount + " chips."
+    raiseAmount = Math.floor(Math.random() * surplus);
+  }
+  betToMatch += raiseAmount;
+  var sentence1 = name + " " + verb + " " + raiseAmount + " chips."
   var sentence2 = "Bet is now " + betToMatch + " chips."
   console.log(sentence1 + " " + sentence2);
+  betTo(player.seatN, betToMatch);
 }
 
 function decisionRound() {
@@ -117,7 +123,7 @@ function decisionRound() {
   for (var i = firstN, count = 0; count < 10; i = (i + 1) % 10, count++) {
     var player = players[i];
     if (player.isAllIn || player.isFolded) continue;
-    if (betToMatch === 0 || player.currentBet === betToMatch) {
+    if (betToMatch === 0 || player.currentBetThisRound === betToMatch) {
       if (Math.random() < 0.8) {
         actCheck(player);
       } else {
@@ -137,16 +143,18 @@ function decisionRound() {
 
 function allPlayersCalled() {
   return players.every(x => {
-    return x.isAllIn || x.isFolded || x.currentBet === betToMatch;
+    return x.isAllIn || x.isFolded || x.currentBetThisRound === betToMatch;
   });
 }
 
 function betRound(isAnteRound = false) {
+  console.log("@@ called betRound", isAnteRound);
+  players.forEach(x => x.currentBetThisRound = 0);
   if (isAnteRound) {
     players.forEach(x => x.isFolded = false);
     betToMatch = ante;
+    console.log("betRound ANTE: betToamtch = ", betToMatch)
   } else {
-    players.forEach(x => x.currentBet = 0);
     betToMatch = 0;
   }
   decisionRound();
@@ -192,7 +200,7 @@ function showdown() {
 var phases = [
   setupPhase,
   antePhase,
-  betRound.bind(true),
+  betRound.bind(null, true),
   flopPhaseStart,
   betRound,
   turnPhaseStart,
