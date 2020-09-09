@@ -20,7 +20,6 @@ function getSmallBlindSeatN() {
 }
 
 function setupPhase() {
-  console.log("@@@@@@@@@@@@@@@@ setupPhase");
   players.forEach((p, idx) => {
     p.seatN = idx;
     p.chips = 1000;
@@ -31,10 +30,11 @@ function setupPhase() {
 }
 
 function betTo(seatN, amount) {
-  console.log(players.map(x => x.currentBetThisRound));
-  console.log("@@ called betTo for ", seatN, amount);
+  // console.log(players.map(x => {
+  //   return (x.isFolded ? 'F_' : '') + x.currentBetThisRound;
+  // }));
   var p = players[seatN];
-  if ((p.chips - p.currentBetThisRound) > amount) {
+  if (p.chips > (amount - p.currentBetThisRound)) {
     var betToAdd = amount - p.currentBetThisRound;
     p.chips -= betToAdd;
     p.currentBetThisRound = amount;
@@ -43,11 +43,11 @@ function betTo(seatN, amount) {
     p.chips = 0;
     p.currentBetThisRound += betToAdd;
     p.isAllIn = true;
+    console.log(getPlayerName(p) + " is all-in.");
   }
 }
 
 function antePhase() {
-  console.log("@@@@@@@@@@@@@@@ antePhase");
   sharedCards.length = 0;
   bigBlindSeatN = (bigBlindSeatN + 1) % 10;
   var bb = bigBlindSeatN;
@@ -148,13 +148,11 @@ function allPlayersCalled() {
 }
 
 function betRound(isAnteRound = false) {
-  console.log("@@ called betRound", isAnteRound);
-  players.forEach(x => x.currentBetThisRound = 0);
   if (isAnteRound) {
     players.forEach(x => x.isFolded = false);
     betToMatch = ante;
-    console.log("betRound ANTE: betToamtch = ", betToMatch)
   } else {
+    players.forEach(x => x.currentBetThisRound = 0);
     betToMatch = 0;
   }
   decisionRound();
@@ -221,4 +219,4 @@ setInterval(() => {
     }
     phases[phaseIdx]();
   }
-}, 200)
+}, 2000)
