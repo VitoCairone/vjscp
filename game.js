@@ -12,7 +12,7 @@ var ante = 50;
 var betToMatch = 0;
 var shouldAdvancePhase = false;
 var phaseIdx = -1;
-var pot = 0;
+var gameInterval;
 
 function getSmallBlindSeatN() {
   if (bigBlindSeatN == 0) return 9;
@@ -24,9 +24,9 @@ function setupPhase() {
     p.seatN = idx;
     p.chips = 1000;
     p.currentBetThisRound = 0;
+    p.betInPot = 0;
     p.isAllIn = false;
   });
-  shouldAdvancePhase = true;
 }
 
 function betTo(seatN, amount) {
@@ -61,7 +61,6 @@ function antePhase() {
   console.log("Player " + sb + " antes (small blind).");
   betTo(bb, ante);
   console.log("Player " + bb + " antes.");
-  shouldAdvancePhase = true;
 }
 
 function flopPhaseStart() {
@@ -70,21 +69,18 @@ function flopPhaseStart() {
   sharedCards.push(deck[49]);
   sharedCardsStr = dealer.makeCardsStr(sharedCards);
   console.log("Shared cards at Flop: ", sharedCardsStr);
-  shouldAdvancePhase = true;
 }
 
 function turnPhaseStart() {
   sharedCards.push(deck[50]);
   sharedCardsStr = dealer.makeCardsStr(sharedCards);
   console.log("Shared cards at Turn: ", sharedCardsStr);
-  shouldAdvancePhase = true;
 }
 
 function riverPhaseStart() {
   sharedCards.push(deck[51]);
   sharedCardsStr = dealer.makeCardsStr(sharedCards);
   console.log("Shared cards at River: ", sharedCardsStr);
-  shouldAdvancePhase = true;
 }
 
 function actCheck(player) {
@@ -147,6 +143,13 @@ function allPlayersCalled() {
   });
 }
 
+function collectPots() {
+  players.forEach(p => {
+    p.betInPot += p.currentBetThisRound;
+    p.currentBetThisRound = 0;
+  });
+}
+
 function betRound(isAnteRound = false) {
   if (isAnteRound) {
     players.forEach(x => x.isFolded = false);
@@ -159,7 +162,7 @@ function betRound(isAnteRound = false) {
   while (betToMatch !== 0 && !allPlayersCalled()) {
     decisionRound();
   }
-  shouldAdvancePhase = true;
+  collectPots();
 }
 
 function conjunct(items) {
@@ -186,13 +189,19 @@ function showdown() {
   });
   winners = contestants.filter(x => x.score === maxScore);
   // TODO: handle side pots correctly
+  var pot = players.reduce((sum, p) => sum + p.betInPot, 0);
   let award = pot / winners.length;
   winners.forEach(x => {
     let name = getPlayerName(x);
-    let scoreName = dealer.getScoreName(x.score);
+    let scoreName = dealer.getScoreName(x.score, true);
     console.log(name + " wins " + award + " chips with " + scoreName);
     x.chips += award;
   });
+}
+
+function endGame() {
+  console.log("Game ended.");
+  clearInterval(gameInterval);
 }
 
 var phases = [
@@ -205,11 +214,12 @@ var phases = [
   betRound,
   riverPhaseStart,
   betRound,
-  showdown
+  showdown,
+  endGame
 ]
 
 shouldAdvancePhase = true;
-setInterval(() => {
+gameInterval = setInterval(() => {
   if (shouldAdvancePhase) {
     shouldAdvancePhase = false;
     phaseIdx++;
@@ -218,5 +228,6 @@ setInterval(() => {
       phaseIdx = 1;
     }
     phases[phaseIdx]();
+    shouldAdvancePhase = true;
   }
-}, 2000)
+}, 200);
