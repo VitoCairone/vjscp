@@ -179,33 +179,68 @@ function getPlayerName(player) {
   return "Player " + player.seatN;
 }
 
-function awardWithSidePots(contestants) {
-  console.log("NYI: awardWithSidePots");
+function findWinners(eligibles) {
+  var maxScore = 0;
+  eligibles.forEach(x => {
+    // TODO: move this so every hand is scored just once for any
+    // number of side-pots
+    x.score = dealer.scoreBestHand(x.holdCards.concat(sharedCards));
+    if (x.score > maxScore) maxScore = x.score;
+  });
+  return eligibles.filter(x => x.score === maxScore);
+}
+
+function awardWithSidePots() {
   var betsToPlayers = {};
-  contestants.forEach(x => {
+  players.filter(p => !p.isFolded).forEach(x => {
     betsToPlayers[x.betInPot] = betsToPlayers[x.betInPot] || {};
     betsToPlayers[x.betInPot].push(x);
   });
   var potBets = Object.keys(betsToPlayers);
   potBets.sort((a, b) => a - b);
   
-  var mainPot = pots.pop();
+  var sidePotBetSum = 0; // rename this - what is already taken out, per player
+  var eligibles = [];
+  var mainPotIdx = potBets.length - 1;
+  potBets.forEach((potBet, idx) => {
+    var pot = 0;
+    var thisBet = potBet - sidePotBetSum;
+    eligibles.length = 0;
+    players.forEach(p => {
+      if (p.betInPot < thisBet) {
+        if (!p.isFolded) {
+          console.log("ERROR: player is not folded but does not meet bet");
+        }
+        pot += p.betInPot;
+        p.betInPot = 0;
+      } else if (p.betInPot === thisBet) {
+        if (p.isAllIn || (!p.isFolded && idx === mainPotIdx)) {
+          eligibles.push(p);
+        } else if (!p.isFolded && idx !== mainPotIdx) {
+          console.log("ERROR: player is not folded but does not meet bet");
+        }
+        pot += p.betInPot;
+        p.betInPot = 0;
+      } else {
+        pot += thisBet;
+        p.betInPot -= thisBet;
+        if (!p.isFolded) {
+          eligibles.push(p);
+        }
+      }
+    });
+    sidePotBetSum += thisBet;
 
-  potBets.forEach(sidePotBet => {
-    // NYI
+    var winners = findWinners(eligibles);
+    awardToWinners(winners, pot, idx + 1)
   });
 }
 
-function awardWithoutSidePots(contestants) {
-  var maxScore = 0;
-  var winners = [];
-  contestants.forEach(x => {
-    x.score = dealer.scoreBestHand(x.holdCards.concat(sharedCards));
-    if (x.score > maxScore) maxScore = x.score;
-  });
-  winners = contestants.filter(x => x.score === maxScore);
-  var pot = players.reduce((sum, p) => sum + p.betInPot, 0); // includes folded
+function awardToWinners(winners, pot, sidePotIdx = 0) {
   let award = pot / winners.length;
+  if (sidePotIdx) {
+    console.log("(Side Pot #" + sidePotIdx + ")");
+  }
   winners.forEach(x => {
     let name = getPlayerName(x);
     let scoreName = dealer.getScoreName(x.score, true);
@@ -214,10 +249,17 @@ function awardWithoutSidePots(contestants) {
   });
 }
 
+function awardWithoutSidePots() {
+  var eligibles = players.filter(x => !x.isFolded);
+  var winners = findWinners(eligibles);
+  var pot = players.reduce((sum, p) => sum + p.betInPot, 0);
+  players.forEach(p => p.betInPot = 0);
+  awardToWinners(winners, pot);
+}
+
 function showdown() {
-  contestants = players.filter(x => !x.isFolded);
-  if (contestants.some(x => x.isAllIn)) return awardWithSidePots(contestants);
-  return awardWithoutSidePots(contestants);
+  if (players.some(x => x.isAllIn)) return awardWithSidePots();
+  return awardWithoutSidePots();
 }
 
 function endGame() {
