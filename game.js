@@ -26,13 +26,11 @@ function setupPhase() {
     p.currentBetThisRound = 0;
     p.betInPot = 0;
     p.isAllIn = false;
+    p.isOut = false;
   });
 }
 
 function betTo(seatN, amount) {
-  // console.log(players.map(x => {
-  //   return (x.isFolded ? 'F_' : '') + x.currentBetThisRound;
-  // }));
   var p = players[seatN];
   if (p.chips > (amount - p.currentBetThisRound)) {
     var betToAdd = amount - p.currentBetThisRound;
@@ -48,6 +46,9 @@ function betTo(seatN, amount) {
 }
 
 function antePhase() {
+  players.forEach(p => {
+    if (p.isOut) p.isFolded = true;
+  });
   sharedCards.length = 0;
   bigBlindSeatN = (bigBlindSeatN + 1) % 10;
   var bb = bigBlindSeatN;
@@ -98,14 +99,18 @@ function actFold(player) {
 }
 
 function actRaise(player) {
-  var verb = betToMatch > 0 ? "raises" : "bets";
-  var name = getPlayerName(player);
   var requiredAdd = betToMatch - player.currentBetThisRound;
   var surplus = player.chips - requiredAdd;
+  if (surplus === 0) {
+    return actCall(player);
+  }
+
+  var verb = betToMatch > 0 ? "raises" : "bets";
+  var name = getPlayerName(player);
   if (Math.random() > 0.99) {
     raiseAmount = surplus;
   } else {
-    raiseAmount = Math.floor(Math.random() * surplus);
+    raiseAmount = Math.max(Math.floor(Math.random() * surplus), 1);
   }
   betToMatch += raiseAmount;
   var sentence1 = name + " " + verb + " " + raiseAmount + " chips."
@@ -152,7 +157,11 @@ function collectPots() {
 
 function betRound(isAnteRound = false) {
   if (isAnteRound) {
-    players.forEach(x => x.isFolded = false);
+    players.forEach(p => {
+      if (!p.isOut) {
+        p.isFolded = false
+      }
+    });
     betToMatch = ante;
   } else {
     players.forEach(x => x.currentBetThisRound = 0);
@@ -193,10 +202,13 @@ function findWinners(eligibles) {
 function awardWithSidePots() {
   var betsToPlayers = {};
   players.filter(p => !p.isFolded).forEach(x => {
-    betsToPlayers[x.betInPot] = betsToPlayers[x.betInPot] || {};
+    betsToPlayers[x.betInPot] = betsToPlayers[x.betInPot] || [];
     betsToPlayers[x.betInPot].push(x);
   });
   var potBets = Object.keys(betsToPlayers);
+  if (potBets.length === 1) {
+    return awardWithoutSidePots();
+  }
   potBets.sort((a, b) => a - b);
   
   var sidePotBetSum = 0; // rename this - what is already taken out, per player
@@ -257,9 +269,22 @@ function awardWithoutSidePots() {
   awardToWinners(winners, pot);
 }
 
+function markOutPlayers() {
+  players.forEach(p => {
+    if (p.chips === 0 && !p.isOut) {
+      console.log(getPlayerName(p) + " is out.")
+      p.isOut = true;
+    }
+  });
+}
+
 function showdown() {
-  if (players.some(x => x.isAllIn)) return awardWithSidePots();
-  return awardWithoutSidePots();
+  if (players.some(x => x.isAllIn)) {
+    awardWithSidePots();
+  } else {
+    awardWithoutSidePots();
+  }
+  markOutPlayers();
 }
 
 function endGame() {
